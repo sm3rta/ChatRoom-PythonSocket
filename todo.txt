@@ -1,3 +1,10 @@
-//someone has joined
-private chat
-registration
+
+feature addition:
+    //someone has joined
+    private chat
+    registration
+
+
+
+code cleanup:
+    functions

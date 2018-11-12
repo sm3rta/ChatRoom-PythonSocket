@@ -11,7 +11,7 @@ def receiveMessage():
     except:
         exit()
 
-serverIP = "192.168.43.234"
+serverIP = "192.168.1.57"
 serverPortNumber = 666
 
 try:
@@ -38,9 +38,10 @@ while True:
         messageToSend = input()
         client.send(messageToSend.encode())
         if messageToSend.split()[0] == '/l':
+            print(">>You've logged out")
             break
     except:
-        break 
+        break
 
-print(">>You've logged out")
+print(">>Connection to server terminated")
 client.close()

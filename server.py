@@ -8,22 +8,20 @@ server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 # 	print("Correct usage: script IP port")
 # 	exit()
 
-# IP_address = str(sys.argv[1])
+# serverIP = str(sys.argv[1])
 # Port = int(sys.argv[2])
 
-IP_address = "192.168.43.234"
+serverIP = "192.168.1.57"
 Port = 666
 
 server.bind(("", 666))
-# server.bind((IP_address, Port))
+# server.bind((serverIP, Port))
 server.listen(100)
 
-list_of_clients = []
-
-users = dict()
+clients = dict()
 
 def userExists(message, sender, receiverName):
-	for connection, user in users.items():
+	for connection, user in clients.items():
 		if user == receiverName:
 			return connection
 		return False
@@ -40,9 +38,9 @@ def clientthread(conn, addr):
 			firstWord = split[0]
 			print(firstWord)
 			if firstWord == '/a':
-				users[conn] = " ".join(message.split()[1:])
-				broadcast(">>{} has joined the chatroom!".format(users[conn]).encode(), conn)
-				print(users)
+				clients[conn] = " ".join(message.split()[1:])
+				broadcast(">>{} has joined the chatroom!".format(clients[conn]).encode(), conn)
+				print(clients)
 			elif firstWord == "@":
 				print("private message? sneaky!")
 				receiverName = message.split()[1]
@@ -56,9 +54,9 @@ def clientthread(conn, addr):
 			elif firstWord == "/l":
 				conn.close()
 				remove(conn)
-				# users.popitem
+				# clients.popitem
 			else:
-				broadcast("{}: {}".format(users[conn], message).encode(), conn)
+				broadcast("{}: {}".format(clients[conn], message).encode(), conn)
 			
 		except:
 			exit()
@@ -66,7 +64,7 @@ def clientthread(conn, addr):
 
 def broadcast(message, connection):
 	print(message)
-	for client in list_of_clients: 
+	for client in clients: 
 		if client!=connection:
 			try: 
 				client.send(message) 
@@ -75,13 +73,13 @@ def broadcast(message, connection):
 				remove(client)
 
 def remove(connection): 
-	if connection in list_of_clients: 
-		list_of_clients.remove(connection)
+	if connection in clients: 
+		clients.pop(connection)
 		
 while True:
 	try:
 		conn, addr = server.accept()
-		list_of_clients.append(conn)
+		clients[conn] = ""
 		print("{} connected with port {}".format(*addr))
 		thread = Thread(target=clientthread,args=(conn,addr))
 		thread.setDaemon = True
