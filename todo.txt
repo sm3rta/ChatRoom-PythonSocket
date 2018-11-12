@@ -1,0 +1,3 @@
+//someone has joined
+private chat
+registration
