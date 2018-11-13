@@ -2,8 +2,6 @@ import socket
 from threading import Thread
 import sys
 
-client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
 def receiveMessage():
     try:
         while True:
@@ -13,8 +11,10 @@ def receiveMessage():
     except:
         exit()
 
-# serverIP = "192.168.1.57"
-serverIP = "192.168.43.234"
+client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+serverIP = "192.168.1.57"
+# serverIP = "192.168.43.234"
 serverPortNumber = 666
 
 try:
@@ -23,12 +23,11 @@ except:
     print("Couldn't connect to server")
     exit()
 
-alias = input(">>What's your name? ")
-
 receiver = Thread(target=receiveMessage)
 receiver.setDaemon = True
 receiver.start()
 
+alias = input(">>What's your name? ")
 client.send("/a {}".format(alias).encode())
 
 while True:
@@ -38,7 +37,8 @@ while True:
         if messageToSend.split()[0] == '/l':
             print(">>You've logged out")
             break
-    except:
+    except Exception as e:
+        print(e)
         break
 
 print(">>Connection to server terminated")

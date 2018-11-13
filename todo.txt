@@ -3,6 +3,8 @@ essentials:
     what happens if username is more than one word, for now my solution is to ristrict alias to one word
     what happens if client chooses a username already taken
     server can accpet empty names
+    if client sends empty string, the connection crashes
+    notification alert
 
 feature addition:
     //someone has joined

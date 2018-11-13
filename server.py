@@ -6,8 +6,8 @@ from logging import log
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-# serverIP = "192.168.1.57"
-serverIP = "192.168.43.234"
+serverIP = "192.168.1.57"
+# serverIP = "192.168.43.234"
 port = 666
 
 server.bind(("", port))
@@ -16,24 +16,36 @@ server.listen(100)
 clients = dict()
 clientsLock = Lock()
 
+# clientsLock.acquire()
+
+
 def userExists(receiverName):
 	for connection, user in clients.items():
 		if user == receiverName:
+			clientsLock.release()
 			return connection
 	return False
 
 def assertClientStatus():
 	while True:
-		
+		sleep(1)
+		deadClients = []
+		clientsLock.acquire()
+
 		for client in clients:
 			try:
-				client.send("/t")
-			except:
-				broadcast(">>{} has died!".format(clients[connection]).encode(), connection)
-				connection.close()
-				removeConnection(connection)
+				client.send("/t".encode())
+			except Exception as e:
+				print(e)
+				deadClients.append(client)
+		print(deadClients)
+		for client in deadClients:
+			broadcast(">>{} has died!".format(clients[connection]).encode(), connection)
+			connection.close()
+			removeConnection(connection)
+
+		clientsLock.release()
 		
-		sleep(1)
 		
 def clientThread(connection, addr):
 	connection.send(">>Welcome to the chatroom!".encode())
@@ -47,10 +59,10 @@ def clientThread(connection, addr):
 			command = splitMessage[0]
 
 			if command == '/a':
-				
+				clientsLock.acquire()
 				clients[connection] = " ".join(message.split()[1:])
-				
 				broadcast(">>{} has joined the chatroom!".format(clients[connection]).encode(), connection)
+				clientsLock.release()
 			elif command == "@":
 				receiverName = message.split()[1]
 				messageToSend = " ".join(message.split()[2:])
@@ -63,25 +75,31 @@ def clientThread(connection, addr):
 				else:
 					connection.send(">>User not found".encode())
 			elif command == "/l":
+				clientsLock.acquire()
 				broadcast(">>{} has left the chatroom!".format(clients[connection]).encode(), connection)
 				connection.close()
-				
 				removeConnection(connection)
-				
+				clientsLock.release()
 			else:
+				clientsLock.acquire()
 				broadcast("{}: {}".format(clients[connection], message).encode(), connection)
+				clientsLock.release()
 		except (KeyboardInterrupt, SystemExit):
 			raise
 
 def broadcast(message, connection):
-	
+	deadClients = []
 	for client in clients:
 		if client!=connection:
 			try: 
 				client.send(message) 
-			except: 
-				client.close() 
-				removeConnection(client)
+			except:
+				deadClients.append(client)
+	for client in deadClients:
+		client.close()
+		removeConnection(client)
+
+	
 					
 
 def removeConnection(connection): 
