@@ -1,6 +1,8 @@
 import socket
-from threading import Thread
+from threading import Thread, Lock
 import sys
+
+alias = input(">>What's your name? ")
 
 def receiveMessage():
     try:
@@ -27,7 +29,6 @@ receiver = Thread(target=receiveMessage)
 receiver.setDaemon = True
 receiver.start()
 
-alias = input(">>What's your name? ")
 client.send("/a {}".format(alias).encode())
 
 while True:
