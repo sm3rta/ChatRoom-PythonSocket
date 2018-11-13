@@ -4,7 +4,7 @@ essentials:
     //what happens if client chooses a username already taken
     //server can accpet empty names
     //if client sends empty string, the connection crashes
-    notification alert
+    //notification alert
 
 feature addition:
     //someone has joined

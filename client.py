@@ -52,15 +52,18 @@ except:
 while True:
     alias = getUsername()
     client.send("/a {}".format(alias).encode())
-    message = client.recv(2018).decode()
-    command = message.split()[0]
-    if command == "/aa":
-        status = message.split()[1]
-        if status == "ok":
-            break
-        else:
-            print(">>Username already taken")
-            Beep(*frequencies["super"])
+    #waiting for /aa
+    command = ""
+    while command != "/aa":
+        message = client.recv(2018).decode()
+        command = message.split()[0]
+
+    status = message.split()[1]
+    if status == "ok":
+        break
+    else:
+        print(">>Username already taken")
+        Beep(*frequencies["super"])
 
 
 #Start receiver function

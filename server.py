@@ -4,9 +4,7 @@ from threading import Thread, Lock
 from time import sleep
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
 serverIP = "192.168.1.57"
-# serverIP = "192.168.43.234"
 port = 666
 
 server.bind(("", port))
@@ -23,7 +21,7 @@ def clientThread(connection, addr):
 			
 			splitMessage = message.split()
 			command = splitMessage[0]
-
+			#choosing alias
 			if command == '/a':
 				alias = " ".join(message.split()[1:])
 				clientsLock.acquire()
@@ -34,6 +32,7 @@ def clientThread(connection, addr):
 					clients[connection] = alias
 					broadcast(">>{} has joined the chatroom!".format(clients[connection]).encode(), connection)
 				clientsLock.release()
+			#private chat
 			elif command == "@":
 				receiverName = message.split()[1]
 				messageToSend = " ".join(message.split()[2:])
@@ -47,13 +46,16 @@ def clientThread(connection, addr):
 						connection.send(">>Failed to send PM".encode())
 				else:
 					connection.send(">>User not found".encode())
+			#user logging out
 			elif command == "/l":
 				killUser(connection)
 				break
+			#normal public chat
 			else:
 				clientsLock.acquire()
 				broadcast("{}: {}".format(clients[connection], message).encode(), connection)
 				clientsLock.release()
+		#user died
 		except Exception as e:
 			print(e)
 			killUser(connection)
@@ -91,9 +93,9 @@ def removeConnection(connection):
 while True:
 	try:
 		connection, addr = server.accept()
-		# 
+		clientsLock.acquire()
 		clients[connection] = ""
-		# 
+		clientsLock.release()
 		print("{} connected with port {}".format(*addr))
 		thread = Thread(target=clientThread,args=(connection,addr))
 		thread.setDaemon = True
