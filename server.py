@@ -2,7 +2,6 @@ import socket
 import sys
 from threading import Thread, Lock
 from time import sleep
-from logging import log
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -16,34 +15,7 @@ server.listen(100)
 clients = dict()
 clientsLock = Lock()
 
-def userExists(receiverName):
-	for connection, user in clients.items():
-		if user == receiverName:
-			return connection
-	return False
-
-# def assertClientStatus():
-# 	while True:
-# 		sleep(1)
-# 		deadClients = []
-# 		clientsLock.acquire()
-# 		for client in clients:
-# 			try:
-# 				client.send("/t".encode())
-# 			except Exception as e:
-# 				print(e)
-# 				deadClients.append(client)
-# 		print(deadClients)
-# 		for client in deadClients:
-# 			broadcast(">>{} has died!".format(clients[connection]).encode(), connection)
-# 			connection.close()
-# 			removeConnection(connection)
-# 		clientsLock.release()
-		
-		
 def clientThread(connection, addr):
-	connection.send(">>Welcome to the chatroom!".encode())
-	
 	while True:
 		try:
 			message = connection.recv(2048)
@@ -53,9 +25,14 @@ def clientThread(connection, addr):
 			command = splitMessage[0]
 
 			if command == '/a':
+				alias = " ".join(message.split()[1:])
 				clientsLock.acquire()
-				clients[connection] = " ".join(message.split()[1:])
-				broadcast(">>{} has joined the chatroom!".format(clients[connection]).encode(), connection)
+				if userExists(alias):
+					connection.send("/aa nok".encode())
+				else:
+					connection.send("/aa ok".encode())
+					clients[connection] = alias
+					broadcast(">>{} has joined the chatroom!".format(clients[connection]).encode(), connection)
 				clientsLock.release()
 			elif command == "@":
 				receiverName = message.split()[1]
@@ -71,11 +48,7 @@ def clientThread(connection, addr):
 				else:
 					connection.send(">>User not found".encode())
 			elif command == "/l":
-				clientsLock.acquire()
-				broadcast(">>{} has left the chatroom!".format(clients[connection]).encode(), connection)
-				connection.close()
-				removeConnection(connection)
-				clientsLock.release()
+				killUser(connection)
 				break
 			else:
 				clientsLock.acquire()
@@ -83,13 +56,21 @@ def clientThread(connection, addr):
 				clientsLock.release()
 		except Exception as e:
 			print(e)
-			clientsLock.acquire()
-			broadcast(">>{} has left the chatroom!".format(clients[connection]).encode(), connection)
-			connection.close()
-			removeConnection(connection)
-			clientsLock.release()
+			killUser(connection)
 			break
 
+def killUser(connection):
+	clientsLock.acquire()
+	broadcast(">>{} has left the chatroom!".format(clients[connection]).encode(), connection)
+	connection.close()
+	removeConnection(connection)
+	clientsLock.release()
+
+def userExists(receiverName):
+	for connection, user in clients.items():
+		if user == receiverName:
+			return connection
+	return False
 
 def broadcast(message, connection):
 	deadClients = []
@@ -103,15 +84,9 @@ def broadcast(message, connection):
 		client.close()
 		removeConnection(client)
 					
-
 def removeConnection(connection): 
 	if connection in clients: 
 		clients.pop(connection)
-		
-
-# clientChecker = Thread(target=assertClientStatus)
-# clientChecker.setDaemon = True
-# clientChecker.start()
 
 while True:
 	try:
@@ -126,5 +101,4 @@ while True:
 	except (KeyboardInterrupt, SystemExit):
 		raise
 
-# connection.close()
 server.close()
