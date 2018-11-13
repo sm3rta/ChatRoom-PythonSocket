@@ -1,10 +1,12 @@
+essentials:
+    what happens if a client abruptly closes their connection w/o typing /l
+    //what happens if username is more than one word, for now my solution is to ristrict alias to one word
 
 feature addition:
     //someone has joined
-    private chat
+    //private chat
+    //someone has left
     registration
-
-
 
 code cleanup:
     functions

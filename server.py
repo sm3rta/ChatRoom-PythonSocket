@@ -4,63 +4,53 @@ from threading import Thread
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-# if len(sys.argv) != 3:
-# 	print("Correct usage: script IP port")
-# 	exit()
-
-# serverIP = str(sys.argv[1])
-# Port = int(sys.argv[2])
-
 serverIP = "192.168.1.57"
-Port = 666
+port = 666
 
-server.bind(("", 666))
-# server.bind((serverIP, Port))
+server.bind(("", port))
 server.listen(100)
 
 clients = dict()
 
-def userExists(message, sender, receiverName):
+def userExists(sender, receiverName):
 	for connection, user in clients.items():
 		if user == receiverName:
 			return connection
-		return False
+	return False
 
-def clientthread(conn, addr):
-	conn.send(b">>Welcome to the chatroom!")
+def clientthread(connection, addr):
+	connection.send(">>Welcome to the chatroom!".encode())
 	
 	while True:
 		try:
-			message = conn.recv(2048)
+			message = connection.recv(2048)
 			message = message.decode()
 			
-			split = message.split()
-			firstWord = split[0]
-			print(firstWord)
-			if firstWord == '/a':
-				clients[conn] = " ".join(message.split()[1:])
-				broadcast(">>{} has joined the chatroom!".format(clients[conn]).encode(), conn)
-				print(clients)
-			elif firstWord == "@":
-				print("private message? sneaky!")
+			splitMessage = message.split()
+			command = splitMessage[0]
+
+			if command == '/a':
+				clients[connection] = " ".join(message.split()[1:])
+				broadcast(">>{} has joined the chatroom!".format(clients[connection]).encode(), connection)
+			elif command == "@":
 				receiverName = message.split()[1]
 				messageToSend = " ".join(message.split()[2:])
-				try:
-					connection = userExists(message, conn, receiverName)
-					connection.send(messageToSend.encode())
-				except:
-					conn.send(">>User not found")
-				
-			elif firstWord == "/l":
-				conn.close()
-				remove(conn)
-				# clients.popitem
+				receiver = userExists(connection, receiverName)
+				if receiver:
+					try:
+						receiver.send(messageToSend.encode())
+					except:
+						connection.send(">>Failed to send PM".encode())
+				else:
+					connection.send(">>User not found".encode())
+			elif command == "/l":
+				broadcast(">>{} has left the chatroom!".format(clients[connection]).encode(), connection)
+				connection.close()
+				removeConnection(connection)
 			else:
-				broadcast("{}: {}".format(clients[conn], message).encode(), conn)
-			
-		except:
-			exit()
-
+				broadcast("{}: {}".format(clients[connection], message).encode(), connection)
+		except (KeyboardInterrupt, SystemExit):
+			raise
 
 def broadcast(message, connection):
 	print(message)
@@ -70,23 +60,21 @@ def broadcast(message, connection):
 				client.send(message) 
 			except: 
 				client.close() 
-				remove(client)
+				removeConnection(client)
 
-def remove(connection): 
+def removeConnection(connection): 
 	if connection in clients: 
 		clients.pop(connection)
 		
 while True:
 	try:
-		conn, addr = server.accept()
-		clients[conn] = ""
+		connection, addr = server.accept()
+		clients[connection] = ""
 		print("{} connected with port {}".format(*addr))
-		thread = Thread(target=clientthread,args=(conn,addr))
+		thread = Thread(target=clientthread,args=(connection,addr))
 		thread.setDaemon = True
 		thread.start()
-	except KeyboardInterrupt:
-		exit()
-	
+	except (KeyboardInterrupt, SystemExit):
+		raise
 
-conn.close()
 server.close()

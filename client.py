@@ -22,16 +22,11 @@ except:
 
 alias = input(">>What's your name? ")
 
-
-
 receiver = Thread(target=receiveMessage)
 receiver.setDaemon = True
 receiver.start()
 
-
-
 client.send("/a {}".format(alias).encode())
-
 
 while True:
     try:
