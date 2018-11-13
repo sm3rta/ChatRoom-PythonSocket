@@ -1,6 +1,8 @@
 essentials:
-    what happens if a client abruptly closes their connection w/o typing /l
-    //what happens if username is more than one word, for now my solution is to ristrict alias to one word
+    what happens if a client abruptly closes their connection w/o typing /l, possible solution, check for online clients every time interval
+    what happens if username is more than one word, for now my solution is to ristrict alias to one word
+    what happens if client chooses a username already taken
+    server can accpet empty names
 
 feature addition:
     //someone has joined

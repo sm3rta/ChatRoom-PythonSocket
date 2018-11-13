@@ -7,11 +7,14 @@ client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 def receiveMessage():
     try:
         while True:
-            print(client.recv(2018).decode())
+            message = client.recv(2018).decode()
+            if message != "/t":
+                print(message)
     except:
         exit()
 
-serverIP = "192.168.1.57"
+# serverIP = "192.168.1.57"
+serverIP = "192.168.43.234"
 serverPortNumber = 666
 
 try:

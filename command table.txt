@@ -1,0 +1,4 @@
+/l  logout
+/a  choose alias
+/t  test, check for client status
+@   private chat user   
