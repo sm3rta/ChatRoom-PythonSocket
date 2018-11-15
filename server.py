@@ -23,14 +23,14 @@ def clientThread(connection, addr):
 			command = splitMessage[0]
 			#choosing alias
 			if command == '/a':
-				alias = " ".join(message.split()[1:])
+				alias = splitMessage[1]
 				clientsLock.acquire()
 				if userExists(alias):
 					connection.send("/aa nok".encode())
 				else:
 					connection.send("/aa ok".encode())
 					clients[connection] = alias
-					broadcast(">>{} has joined the chatroom!".format(clients[connection]).encode(), connection)
+					broadcast(">>{} has joined the chatroom!".format(alias).encode(), connection)
 				clientsLock.release()
 			#private chat
 			elif command == "@":
@@ -48,7 +48,9 @@ def clientThread(connection, addr):
 					connection.send(">>User not found".encode())
 			#user logging out
 			elif command == "/l":
+				clientsLock.acquire()
 				killUser(connection)
+				clientsLock.release()
 				break
 			#normal public chat
 			else:
@@ -58,15 +60,15 @@ def clientThread(connection, addr):
 		#user died
 		except Exception as e:
 			print(e)
+			clientsLock.acquire()
 			killUser(connection)
+			clientsLock.release()
 			break
 
 def killUser(connection):
-	clientsLock.acquire()
 	broadcast(">>{} has left the chatroom!".format(clients[connection]).encode(), connection)
 	connection.close()
 	removeConnection(connection)
-	clientsLock.release()
 
 def userExists(receiverName):
 	for connection, user in clients.items():
@@ -83,8 +85,7 @@ def broadcast(message, connection):
 			except:
 				deadClients.append(client)
 	for client in deadClients:
-		client.close()
-		removeConnection(client)
+		killUser(client)
 					
 def removeConnection(connection): 
 	if connection in clients: 
