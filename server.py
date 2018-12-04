@@ -2,6 +2,9 @@ import socket
 import sys
 from threading import Thread, Lock
 from time import sleep
+from classmodule import MessageType, Message
+import pickle
+
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 serverIP = "192.168.1.57"
@@ -17,37 +20,37 @@ def clientThread(connection, addr):
 	while True:
 		try:
 			message = connection.recv(2048)
-			message = message.decode()
+			message = pickle.loads(message)
 			
-			splitMessage = message.split()
-			command = splitMessage[0]
+			messageType = message.type
 			#choosing alias
-			if command == '/a':
-				alias = splitMessage[1]
+			if messageType == MessageType.ALIAS:
+				alias = message.content
 				clientsLock.acquire()
 				if userExists(alias):
-					connection.send("/aa nok".encode())
+					connection.send(pickle.dumps(Message(MessageType.ALIAS_ASSERTION, "NOT OK")))
 				else:
-					connection.send("/aa ok".encode())
+					connection.send(pickle.dumps(Message(MessageType.ALIAS_ASSERTION, "OK")))
 					clients[connection] = alias
-					broadcast(">>{} has joined the chatroom!".format(alias).encode(), connection)
+					broadcast(pickle.dumps(Message(MessageType.PRIVATE, ">>{} has joined the chatroom!".format(alias))), connection)
 				clientsLock.release()
 			#private chat
-			elif command == "@":
-				receiverName = message.split()[1]
-				messageToSend = " ".join(message.split()[2:])
+			elif messageType == MessageType.PRIVATE:
+				receiverName = message.target
 				clientsLock.acquire()
 				receiver = userExists(receiverName)
 				clientsLock.release()
 				if receiver:
 					try:
-						receiver.send("<{}>: {}".format(clients[connection], messageToSend).encode())
+						receiver.send(pickle.dumps(Message(
+							MessageType.PRIVATE, "<{}>: {}".format(clients[connection],
+							message.content))))
 					except:
-						connection.send(">>Failed to send PM".encode())
+						connection.send(pickle.dumps(Message(MessageType.ERROR, ">>Failed to send PM")))
 				else:
-					connection.send(">>User not found".encode())
+					connection.send(pickle.dumps(Message(MessageType.ERROR, ">>User not found")))
 			#user logging out
-			elif command == "/l":
+			elif messageType == MessageType.LOGOUT:
 				clientsLock.acquire()
 				killUser(connection)
 				clientsLock.release()
@@ -55,7 +58,7 @@ def clientThread(connection, addr):
 			#normal public chat
 			else:
 				clientsLock.acquire()
-				broadcast("{}: {}".format(clients[connection], message).encode(), connection)
+				broadcast(pickle.dumps(Message(MessageType.PUBLIC, "{}: {}".format(clients[connection], message))), connection)
 				clientsLock.release()
 		#user died
 		except Exception as e:
@@ -66,7 +69,7 @@ def clientThread(connection, addr):
 			break
 
 def killUser(connection):
-	broadcast(">>{} has left the chatroom!".format(clients[connection]).encode(), connection)
+	broadcast(pickle.dumps(Message(MessageType.LOGOUT, ">>{} has left the chatroom!".format(clients[connection]))), connection)
 	connection.close()
 	removeConnection(connection)
 
@@ -76,10 +79,10 @@ def userExists(receiverName):
 			return connection
 	return False
 
-def broadcast(message, connection):
+def broadcast(message, sender):
 	deadClients = []
 	for client in clients:
-		if client!=connection:
+		if client!=sender:
 			try: 
 				client.send(message) 
 			except:
