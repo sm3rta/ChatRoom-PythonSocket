@@ -8,7 +8,7 @@ import pickle
 frequencies = {"message":(300,300), "super":(700,250)}
 
 #Get username from user and check if username is valid
-def getUsername():  
+def getUsername():
     while True:
         alias = input(">>What's your name? ")
         Beep(*frequencies["super"])
@@ -79,7 +79,7 @@ while True:
     try:
         targetName = None
         userInput = input()
-        if userInput == str():
+        if len(userInput.split()) == 0:
             continue
         if userInput.startswith('/l'):
             messageType = MessageType.LOGOUT
